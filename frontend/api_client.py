@@ -10,15 +10,21 @@ def _get_config(key, default):
     except Exception:
         return os.getenv(key, default)
 
-API_BASE_URL = _get_config("API_BASE_URL", "http://localhost:8000/api/v1")
 API_TIMEOUT_SECONDS = int(_get_config("API_TIMEOUT_SECONDS", "300"))
 
-@st.cache_data(show_spinner=False)
+def _get_api_base_url():
+    """Read API_BASE_URL fresh every call to always use the latest secret."""
+    return _get_config("API_BASE_URL", "http://localhost:8000/api/v1")
+
 def optimize_network(file_bytes, k_road, solve_mode, use_hub_capacity, use_co2=False):
     """
     Sends data to backend FastAPI for optimization.
     """
-    url = f"{API_BASE_URL}/optimize"
+    api_base_url = _get_api_base_url()
+    url = f"{api_base_url}/optimize"
+
+    # Show which URL is being used (helpful for debugging)
+    st.caption(f"🔗 Calling: `{url}`")
 
     files = {
         "file": ("data.xlsx", file_bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -39,7 +45,8 @@ def optimize_network(file_bytes, k_road, solve_mode, use_hub_capacity, use_co2=F
             "Please try a smaller workbook or increase API_TIMEOUT_SECONDS."
         )
     except requests.exceptions.HTTPError as e:
-        raise Exception(f"{e} - Details: {response.text}")
+        raise Exception(f"Backend API Error: {e} - Details: {response.text}")
     except requests.exceptions.RequestException as e:
         raise Exception(f"Could not connect to backend API: {e}")
     return response.json()
+
