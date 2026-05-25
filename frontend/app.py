@@ -70,6 +70,28 @@ div[data-testid="stMetric"] {
 header {visibility: hidden;}
 footer {visibility: hidden;}
 .stDeployButton {display:none;}
+
+/* ── Ghim Sidebar: ẩn nút collapse (mũi tên thu gọn) ── */
+[data-testid="collapsedControl"] {
+    display: none !important;
+}
+button[kind="header"][data-testid="baseButton-header"],
+[data-testid="stSidebarCollapseButton"] {
+    display: none !important;
+}
+/* Đảm bảo sidebar luôn hiển thị với độ rộng cố định */
+[data-testid="stSidebar"] {
+    min-width: 280px !important;
+    max-width: 380px !important;
+}
+/* Ẩn nút collapse bên trong sidebar (mũi tên <) */
+[data-testid="stSidebarCollapseButton"] {
+    display: none !important;
+}
+/* Ẩn nút re-open khi sidebar đã đóng (mũi tên >) */
+[data-testid="collapsedControl"] {
+    display: none !important;
+}
 </style>
 """
 
@@ -78,15 +100,67 @@ st.set_page_config(
     page_title="Pro Hub — Logistics Optimizer",
     page_icon="🚚",
     layout="wide",
+    initial_sidebar_state="expanded"
 )
 st.markdown(_get_css(), unsafe_allow_html=True)
+
+# ── Force sidebar luôn mở bằng JavaScript ──────────────────────────────────
+import streamlit.components.v1 as components
+components.html("""
+<script>
+(function() {
+    function forceOpenSidebar() {
+        // Tìm nút "collapsed control" (mũi tên > để mở lại sidebar)
+        var collapsedBtn = window.parent.document.querySelector('[data-testid="collapsedControl"] button');
+        if (!collapsedBtn) {
+            collapsedBtn = window.parent.document.querySelector('[data-testid="collapsedControl"]');
+        }
+        if (collapsedBtn) {
+            collapsedBtn.click();
+        }
+
+        // Ẩn nút collapse bên trong sidebar
+        var collapseBtn = window.parent.document.querySelector('[data-testid="stSidebarCollapseButton"]');
+        if (collapseBtn) {
+            collapseBtn.style.setProperty('display', 'none', 'important');
+        }
+
+        // Ẩn luôn vùng collapsedControl
+        var collapsedArea = window.parent.document.querySelector('[data-testid="collapsedControl"]');
+        if (collapsedArea) {
+            collapsedArea.style.setProperty('display', 'none', 'important');
+        }
+    }
+
+    // Chạy ngay khi load
+    forceOpenSidebar();
+
+    // Theo dõi DOM changes để xử lý khi Streamlit re-render
+    var observer = new MutationObserver(function(mutations) {
+        forceOpenSidebar();
+    });
+    observer.observe(window.parent.document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['aria-expanded']
+    });
+})();
+</script>
+""", height=0)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CURRENCY AUTO-DETECTION
 # ─────────────────────────────────────────────────────────────────────────────
 import io
 
-root_path = Path(__file__).parent.parent
+# On Streamlit Cloud, the app runs from the repo root or frontend/
+# Use parent.parent for local dev, but check if data/ exists
+_candidate_root = Path(__file__).parent.parent
+if (_candidate_root / "data").exists():
+    root_path = _candidate_root
+else:
+    root_path = Path(__file__).parent  # Fallback for cloud
 
 if "detected_currency" not in st.session_state:
     st.session_state["detected_currency"] = "VND"
@@ -499,6 +573,7 @@ with tab5:
                     scenario_manager.summarize_scenario_result(
                         scenario_cfg["name"],
                         scenario_response,
+                        k_road=scenario_cfg.get("k_road", None)
                     )
                 )
                 scenario_flows_dict[scenario_cfg["name"]] = scenario_response.get("results_flow", [])
@@ -514,6 +589,7 @@ with tab5:
                             "metrics": {},
                             "results_flow": [],
                         },
+                        k_road=scenario_cfg.get("k_road", None)
                     )
                 )
                 scenario_flows_dict[scenario_cfg["name"]] = []
@@ -538,6 +614,7 @@ with tab5:
         display_df["co2_total"] = display_df["co2_total"].fillna(0)
 
         format_dict_scenarios = {
+            "k_road_limit": lambda x: f"{x*100:,.1f}%" if isinstance(x, (int, float)) and pd.notna(x) else x,
             "road_share_pct": lambda x: f"{x:,.1f}%" if isinstance(x, (int, float)) and pd.notna(x) else x,
             "total_flow": lambda x: f"{x:,.0f}" if isinstance(x, (int, float)) and pd.notna(x) else x,
             "active_routes": lambda x: f"{x:,.0f}" if isinstance(x, (int, float)) and pd.notna(x) else x,
@@ -558,12 +635,13 @@ with tab5:
             column_config={
                 "scenario": st.column_config.TextColumn("Scenario"),
                 "status": st.column_config.TextColumn("Status"),
+                "k_road_limit": "K-road Kịch bản",
                 "objective_value": f"Objective Cost ({currency})",
                 "co2_total": "CO₂ (tấn)",
                 "total_flow": "Total Flow (TEU)",
                 "active_routes": "Active Routes",
                 "road_flow": "Road Flow",
-                "road_share_pct": "Road Share %",
+                "road_share_pct": "Tỷ lệ Đường bộ (Thực tế)",
                 "export_flow": "Export Flow",
                 "domestic_flow": "Domestic Flow",
                 "message": st.column_config.TextColumn("Message"),

@@ -1,34 +1,34 @@
 SCENARIOS = [
     {
-        "name": "Kịch Bản 1",
+        "name": "Kịch Bản 0",
         "k_road": 1.0,
         "use_hub_capacity": True,
         "use_co2": True,
         "solver_strategy": "LP",  
     },
     {
-        "name": "Kịch Bản 2",
+        "name": "Kịch Bản 1",
         "k_road": 0.6,
         "use_hub_capacity": True,
         "use_co2": True,
         "solver_strategy": "MIP",  
     },
     {
-        "name": "Kịch Bản 3",
+        "name": "Kịch Bản 2",
         "k_road": 0.4,
         "use_hub_capacity": True,
         "use_co2": True,
         "solver_strategy": "MIP",  
     },
     {
-        "name": "Kịch Bản 4",
+        "name": "Kịch Bản 3",
         "k_road": 0.1,
         "use_hub_capacity": True,
         "use_co2": True,
         "solver_strategy": "MIP", 
     },
     {
-        "name": "Kịch Bản 5",
+        "name": "Kịch Bản 4",
         "k_road": 0,
         "use_hub_capacity": True,
         "use_co2": True,
@@ -47,7 +47,7 @@ def _mode_value(mode_distribution, *names):
     return total
 
 
-def summarize_scenario_result(scenario_name, response):
+def summarize_scenario_result(scenario_name, response, k_road=None):
     metrics = response.get("metrics") or {}
     mode_distribution = metrics.get("Mode_Distribution") or {}
     total_flow = float(metrics.get("Total_Flow") or 0)
@@ -56,10 +56,12 @@ def summarize_scenario_result(scenario_name, response):
     water_flow = _mode_value(mode_distribution, "sea", "barge", "water", "waterway")
     results_flow = response.get("results_flow") or []
     active_routes = sum(1 for row in results_flow if float(row.get("Flow") or 0) > 0)
-    road_share = (road_flow / total_flow * 100) if total_flow else 0.0
+    modal_split_total = sum((float(v or 0) for v in mode_distribution.values()))
+    road_share = (road_flow / modal_split_total * 100) if modal_split_total else 0.0
 
     return {
         "scenario": scenario_name,
+        "k_road_limit": k_road,
         "status": response.get("status", "unknown"),
         "objective_value": float(response.get("objective_value") or 0),
         "co2_total": response.get("co2_total"),

@@ -68,8 +68,8 @@ def generate_scenario_excel(summary_df, scenario_flows_dict, currency="VND"):
     
     # Tạo Header bảng tổng quan
     headers1 = [
-        "Kịch bản", "Trạng thái", f"Chi phí Mục tiêu ({currency})", "Phát thải CO₂ (tấn)", 
-        "Tỷ lệ Đường bộ", "Tổng Lưu lượng (TEU)", "Tuyến Hoạt động", 
+        "Kịch bản", "Trạng thái", "K-road Kịch bản", f"Chi phí Mục tiêu ({currency})", "Phát thải CO₂ (tấn)", 
+        "Tỷ lệ Đường bộ (Thực tế)", "Tổng Lưu lượng (TEU)", "Tuyến Hoạt động", 
         "Nội địa (TEU)", "Xuất khẩu (TEU)"
     ]
     
@@ -114,13 +114,14 @@ def generate_scenario_excel(summary_df, scenario_flows_dict, currency="VND"):
             
         num_format_cost = '$#,##0.00' if currency == "USD" else '#,##0'
         metrics_mapping = [
-            (3, row.get("objective_value", 0), num_format_cost),
-            (4, co2_val, '#,##0'),
-            (5, row.get("road_share_pct", 0) / 100.0, '0.0%'),
-            (6, row.get("total_flow", 0), '#,##0'),
-            (7, row.get("active_routes", 0), '#,##0'),
-            (8, row.get("domestic_flow", 0), '#,##0'),
-            (9, row.get("export_flow", 0), '#,##0'),
+            (3, row.get("k_road_limit", 0), '0.0%'),
+            (4, row.get("objective_value", 0), num_format_cost),
+            (5, co2_val, '#,##0'),
+            (6, row.get("road_share_pct", 0) / 100.0, '0.0%'),
+            (7, row.get("total_flow", 0), '#,##0'),
+            (8, row.get("active_routes", 0), '#,##0'),
+            (9, row.get("domestic_flow", 0), '#,##0'),
+            (10, row.get("export_flow", 0), '#,##0'),
         ]
         
         for col_c, val, num_format in metrics_mapping:
@@ -142,7 +143,7 @@ def generate_scenario_excel(summary_df, scenario_flows_dict, currency="VND"):
     chart1.width = 14
     chart1.height = 8.5
     
-    data1 = Reference(ws1, min_col=3, min_row=start_row, max_row=start_row + len(summary_df))
+    data1 = Reference(ws1, min_col=4, min_row=start_row, max_row=start_row + len(summary_df))
     cats1 = Reference(ws1, min_col=1, min_row=start_row + 1, max_row=start_row + len(summary_df))
     chart1.add_data(data1, titles_from_data=True)
     chart1.set_categories(cats1)
@@ -158,13 +159,6 @@ def generate_scenario_excel(summary_df, scenario_flows_dict, currency="VND"):
     chart2.x_axis.title = "Kịch bản"
     chart2.width = 14
     chart2.height = 8.5
-    
-    data2 = Reference(ws1, min_col=4, min_row=start_row, max_row=start_row + len(summary_df))
-    cats2 = Reference(ws1, min_col=1, min_row=start_row + 1, max_row=start_row + len(summary_df))
-    chart2.add_data(data2, titles_from_data=True)
-    chart2.set_categories(cats2)
-    chart2.legend = None
-    ws1.add_chart(chart2, "F14")
 
     # ─────────────────────────────────────────────────────────────────────────
     # SHEET 2: SO SÁNH TUYẾN ĐƯỜNG (ROUTE FLOW COMPARISON)

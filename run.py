@@ -32,15 +32,19 @@ def main():
     # Ensure we are in the project root
     project_root = os.path.dirname(os.path.abspath(__file__))
     os.chdir(project_root)
+    
+    # Add backend directory to PYTHONPATH so module 'app' can be found
+    os.environ["PYTHONPATH"] = os.path.join(project_root, "backend") + os.pathsep + os.environ.get("PYTHONPATH", "")
 
     # 1. Start Backend (FastAPI)
     backend_cmd = [
         sys.executable, "-m", "uvicorn", 
-        "backend.app.main:app", 
+        "app.main:app", 
         "--host", "127.0.0.1", 
         "--port", "8000", 
         "--reload",
-        "--reload-dir", "backend"
+        "--reload-dir", "backend",
+        "--app-dir", "backend"
     ]
     
     # 2. Start Frontend (Streamlit)

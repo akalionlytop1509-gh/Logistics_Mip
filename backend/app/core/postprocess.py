@@ -59,28 +59,65 @@ _NODE_COLOR = {
 # PUBLIC API
 # ═════════════════════════════════════════════════════════════════════════════
 
-def analyze_results(results_df: pd.DataFrame, total_cost: float) -> dict:
+def analyze_results(
+    results_df: pd.DataFrame,
+    total_cost: float,
+    port_nodes: set = None,
+    demand_map: dict = None,
+    export_demand_total: float = None,
+) -> dict:
     """Return a dict of summary metrics from solver output."""
     if results_df is None or results_df.empty:
         return {"Status": "Infeasible"}
 
     mode_dist = results_df.groupby("Mode")["Flow"].sum().to_dict()
     mode_dist = {k: int(v) for k, v in mode_dist.items()}
+    network_flow = float(results_df["Flow"].sum())
 
     # Export vs domestic split
     export_flow   = 0
     domestic_flow = 0
-    if "Is_Export" in results_df.columns:
-        export_flow   = int(results_df.loc[results_df["Is_Export"] == 1, "Flow"].sum())
-        domestic_flow = int(results_df.loc[results_df["Is_Export"] != 1, "Flow"].sum())
+    served_total_flow = network_flow
+    
+    # Để tránh cộng dồn double-counting (1 TEU đi qua 2 chặng xuất khẩu bị tính là 2),
+    # tính lượng TEU thực tế đến tay người nhận / cảng đích.
+    if port_nodes is not None and demand_map is not None:
+        # Lượng xuất khẩu: Tổng flow đến các Cảng
+        normalized_ports = {str(port).strip() for port in port_nodes}
+        normalized_demand = {
+            str(node).strip(): float(value or 0)
+            for node, value in (demand_map or {}).items()
+        }
+        if export_demand_total is not None and not pd.isna(export_demand_total):
+            export_flow = float(export_demand_total)
+        else:
+            export_flow = sum(
+                demand
+                for node, demand in normalized_demand.items()
+                if node in normalized_ports
+            )
+        
+        # Lượng nội địa: Tổng flow đến các Điểm Cầu (không phải Cảng)
+        domestic_flow = sum(
+            demand
+            for node, demand in normalized_demand.items()
+            if node not in normalized_ports
+        )
+        served_total_flow = domestic_flow + export_flow
+    elif "Is_Export" in results_df.columns:
+        # Fallback heuristic
+        export_flow   = float(results_df.loc[results_df["Is_Export"] == 1, "Flow"].sum())
+        domestic_flow = float(results_df.loc[results_df["Is_Export"] != 1, "Flow"].sum())
+        served_total_flow = domestic_flow + export_flow
 
     return {
         "Total_Cost":      float(total_cost),
-        "Total_Flow":      int(results_df["Flow"].sum()),
+        "Total_Flow":      int(round(served_total_flow)),
+        "Network_Flow":    int(round(network_flow)),
         "Route_Count":     int(len(results_df)),
         "Mode_Distribution": mode_dist,
-        "Export_Flow":     export_flow,
-        "Domestic_Flow":   domestic_flow,
+        "Export_Flow":     int(round(export_flow)),
+        "Domestic_Flow":   int(round(domestic_flow)),
     }
 
 

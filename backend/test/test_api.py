@@ -16,7 +16,7 @@ def test_read_main():
 def client():
     # We need to find where the FastAPI 'app' is created. 
     # Usually it's in backend/app/main.py or similar.
-    from backend.app.main import app
+    from app.main import app
     return TestClient(app)
 
 def test_optimize_endpoint(client):

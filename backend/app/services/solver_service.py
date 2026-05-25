@@ -2,10 +2,10 @@ import io
 import hashlib
 import pandas as pd
 from functools import lru_cache
-from backend.app.utils.excel_parser import load_logistics_data
-from backend.app.core.optimizer import HubLogisticsOptimizer
-from backend.app.core.postprocess import analyze_results
-from backend.app.utils.validator import validate_logistics_data
+from app.utils.excel_parser import load_logistics_data
+from app.core.optimizer import HubLogisticsOptimizer
+from app.core.postprocess import analyze_results
+from app.utils.validator import validate_logistics_data
 
 # Global cache for parsed data to avoid re-parsing same file
 _PARSED_DATA_CACHE = {}
