@@ -23,9 +23,6 @@ def optimize_network(file_bytes, k_road, solve_mode, use_hub_capacity, use_co2=F
     api_base_url = _get_api_base_url()
     url = f"{api_base_url}/optimize"
 
-    # Show which URL is being used (helpful for debugging)
-    st.caption(f"🔗 Calling: `{url}`")
-
     files = {
         "file": ("data.xlsx", file_bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     }
