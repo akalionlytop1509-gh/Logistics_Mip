@@ -4,7 +4,7 @@ SCENARIOS = [
         "k_road": 1.0,
         "use_hub_capacity": True,
         "use_co2": True,
-        "solver_strategy": "LP",  
+        "solver_strategy": "MIP",  
     },
     {
         "name": "Kịch Bản 1",
@@ -47,7 +47,7 @@ def _mode_value(mode_distribution, *names):
     return total
 
 
-def summarize_scenario_result(scenario_name, response, k_road=None):
+def summarize_scenario_result(scenario_name, response, k_road=None, solver_strategy=None):
     metrics = response.get("metrics") or {}
     mode_distribution = metrics.get("Mode_Distribution") or {}
     total_flow = float(metrics.get("Total_Flow") or 0)

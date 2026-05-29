@@ -37,6 +37,7 @@ async def optimize_network(
                 detail=f"Excel file is too large. Maximum allowed size is {MAX_UPLOAD_MB} MB.",
             )
 
+        # Run synchronously
         result = run_optimization(
             file_bytes=file_bytes,
             k_road=k_road,
@@ -44,12 +45,14 @@ async def optimize_network(
             use_hub_capacity=use_hub_capacity,
             use_co2=use_co2,
         )
+
         return result
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("Optimization request failed: %s", e)
+        logger.exception("Failed to run optimization: %s", e)
         raise HTTPException(
-            status_code=400,
-            detail="Unable to optimize this Excel file. Please check the workbook format and input data.",
+            status_code=500,
+            detail=f"Failed to run optimization task. Error: {str(e)}"
         )

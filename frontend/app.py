@@ -397,60 +397,69 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(["📈 Network Flow", "📊 Node Analysis
 # TAB 1 — NETWORK FLOW
 # ─────────────────────────────────────────────────────────────────────────────
 with tab1:
-    st.subheader("Optimized Logistics Network (Solid=Used, Dashed=Candidate)")
+    @st.fragment
+    def render_network_tab_content():
+        st.subheader("Optimized Logistics Network (Solid=Used, Dashed=Candidate)")
+        show_candidate_arcs = st.toggle("Hiển thị lưới tuyến ứng viên (Candidate Arcs)", value=False)
 
-    # 🌿 Summary CO2 (Always show if co2_total exists)
-    if co2_total is not None:
-        st.info(f"🌿 **Tổng phát thải CO₂**: {co2_total:,} tấn")
+        # 🌿 Summary CO2 (Always show if co2_total exists)
+        if co2_total is not None:
+            st.info(f"🌿 **Tổng phát thải CO₂**: {co2_total:,} tấn")
 
-    fig = viz_map.build_network_figure(
-        results_df,
-        all_arcs_df,
-        supply_map,
-        demand_map,
-        port_nodes,
-        nodes_info=network_data.get("nodes_info", {})
-    )
-
-    if fig:
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.warning("Could not generate network diagram.")
-
-    st.divider()
-    st.markdown("#### Flow Allocation Results")
-    if not results_df.empty:
-        active_flows = results_df[results_df['Flow'] > 0].copy()
-        
-        format_dict = {
-            "Flow": lambda x: f"{x:,.1f}".rstrip('0').rstrip('.') if '.' in f"{x:,.1f}" else f"{x:,.0f}" if isinstance(x, (int, float)) else x,
-        }
-        if currency == "USD":
-            format_dict["Cost"] = lambda x: f"${x:,.2f}" if isinstance(x, (int, float)) and pd.notna(x) else x
-        else:
-            format_dict["Cost"] = lambda x: f"{x:,.0f} VND" if isinstance(x, (int, float)) and pd.notna(x) else x
-            
-        if "CO2_Emission" in active_flows.columns:
-            format_dict["CO2_Emission"] = lambda x: f"{x:,.4f}" if isinstance(x, (int, float)) and pd.notna(x) else x
-            
-        styled_flows = active_flows.style.apply(highlight_export_lh, axis=1).format(format_dict)
-        
-        col_cfg_tab1 = {
-            "Flow":      st.column_config.Column("Flow (TEU)"),
-            "Mode":      st.column_config.TextColumn("Mode"),
-            "Is_Export": st.column_config.CheckboxColumn("Export?"),
-            "Is_Open":   st.column_config.CheckboxColumn("Open?"),
-            "Cost":      st.column_config.Column(curr_col_name),
-        }
-        if "CO2_Emission" in active_flows.columns:
-            col_cfg_tab1["CO2_Emission"] = st.column_config.Column("CO₂ (tấn)")
-            
-        st.dataframe(
-            styled_flows,
-            use_container_width=True,
-            column_config=col_cfg_tab1,
-            hide_index=True
+        fig = viz_map.build_network_figure(
+            results_df,
+            all_arcs_df,
+            supply_map,
+            demand_map,
+            port_nodes,
+            nodes_info=network_data.get("nodes_info", {}),
+            show_candidate_arcs=show_candidate_arcs
         )
+
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.warning("Could not generate network diagram.")
+
+        st.divider()
+        st.markdown("#### Flow Allocation Results")
+        if not results_df.empty:
+            active_flows = results_df[results_df['Flow'] > 0].copy()
+            
+            format_dict = {
+                "Flow": lambda x: f"{x:,.1f}".rstrip('0').rstrip('.') if '.' in f"{x:,.1f}" else f"{x:,.0f}" if isinstance(x, (int, float)) else x,
+            }
+            if currency == "USD":
+                format_dict["Cost"] = lambda x: f"${x:,.2f}" if isinstance(x, (int, float)) and pd.notna(x) else x
+                format_dict["FixedCost"] = lambda x: f"${x:,.2f}" if isinstance(x, (int, float)) and pd.notna(x) else x
+            else:
+                format_dict["Cost"] = lambda x: f"{x:,.0f} VND" if isinstance(x, (int, float)) and pd.notna(x) else x
+                format_dict["FixedCost"] = lambda x: f"{x:,.0f} VND" if isinstance(x, (int, float)) and pd.notna(x) else x
+                
+            if "CO2_Emission" in active_flows.columns:
+                format_dict["CO2_Emission"] = lambda x: f"{x:,.4f}" if isinstance(x, (int, float)) and pd.notna(x) else x
+                
+            styled_flows = active_flows.style.apply(highlight_export_lh, axis=1).format(format_dict)
+            
+            col_cfg_tab1 = {
+                "Flow":      st.column_config.Column("Flow (TEU)"),
+                "Mode":      st.column_config.TextColumn("Mode"),
+                "Is_Export": st.column_config.CheckboxColumn("Export?"),
+                "Is_Open":   st.column_config.CheckboxColumn("Open?"),
+                "Cost":      st.column_config.Column(curr_col_name),
+                "FixedCost": st.column_config.Column(f"Fixed Cost ({currency})"),
+            }
+            if "CO2_Emission" in active_flows.columns:
+                col_cfg_tab1["CO2_Emission"] = st.column_config.Column("CO₂ (tấn)")
+                
+            st.dataframe(
+                styled_flows,
+                use_container_width=True,
+                column_config=col_cfg_tab1,
+                hide_index=True
+            )
+            
+    render_network_tab_content()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # TAB 2 — NODE ANALYSIS (NEW & IMPROVED)
@@ -512,8 +521,10 @@ with tab3:
         }
         if currency == "USD":
             format_dict_tab3["Cost"] = lambda x: f"${x:,.2f}" if isinstance(x, (int, float)) and pd.notna(x) else x
+            format_dict_tab3["FixedCost"] = lambda x: f"${x:,.2f}" if isinstance(x, (int, float)) and pd.notna(x) else x
         else:
             format_dict_tab3["Cost"] = lambda x: f"{x:,.0f} VND" if isinstance(x, (int, float)) and pd.notna(x) else x
+            format_dict_tab3["FixedCost"] = lambda x: f"{x:,.0f} VND" if isinstance(x, (int, float)) and pd.notna(x) else x
             
         styled_tab3 = active_tab3.style.apply(highlight_export_lh, axis=1).format(format_dict_tab3)
         
@@ -523,6 +534,7 @@ with tab3:
             "Is_Open": st.column_config.CheckboxColumn("Arc Open?"),
             "Mode": st.column_config.TextColumn("Mode 🚛"),
             "Cost": st.column_config.Column(curr_col_name),
+            "FixedCost": st.column_config.Column(f"Fixed Cost ({currency})"),
         }
             
         st.dataframe(
@@ -554,7 +566,7 @@ with tab5:
     st.markdown("#### Scenario Comparison")
     st.caption("Run standard scenarios against the same Excel data and current solver mode.")
 
-    if st.button("Run scenario comparison", type="primary"):
+    if st.button("▶ Run Scenario Comparison", type="primary"):
         scenario_rows = []
         scenario_flows_dict = {}
         errors = []
@@ -562,10 +574,11 @@ with tab5:
 
         for idx, scenario_cfg in enumerate(scenario_manager.SCENARIOS, start=1):
             try:
+                # ALL params come strictly from scenario_manager.SCENARIOS config
                 scenario_response = api_client.optimize_network(
                     file_bytes=file_bytes,
                     k_road=scenario_cfg["k_road"],
-                    solve_mode=solve_mode,
+                    solve_mode=scenario_cfg.get("solver_strategy", "MIP"),
                     use_hub_capacity=scenario_cfg["use_hub_capacity"],
                     use_co2=scenario_cfg["use_co2"],
                 )
@@ -573,7 +586,8 @@ with tab5:
                     scenario_manager.summarize_scenario_result(
                         scenario_cfg["name"],
                         scenario_response,
-                        k_road=scenario_cfg.get("k_road", None)
+                        k_road=scenario_cfg["k_road"],
+                        solver_strategy=scenario_cfg.get("solver_strategy", "MIP"),
                     )
                 )
                 scenario_flows_dict[scenario_cfg["name"]] = scenario_response.get("results_flow", [])
@@ -589,7 +603,8 @@ with tab5:
                             "metrics": {},
                             "results_flow": [],
                         },
-                        k_road=scenario_cfg.get("k_road", None)
+                        k_road=scenario_cfg["k_road"],
+                        solver_strategy=scenario_cfg.get("solver_strategy", "MIP"),
                     )
                 )
                 scenario_flows_dict[scenario_cfg["name"]] = []

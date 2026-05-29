@@ -126,7 +126,14 @@ def load_logistics_data(file_source):
         n_name_col = get_col(nodes_df, 'Node_Name', 'Name', 'Tên', 'NodeName')
         n_type_col = get_col(nodes_df, 'Node_Type', 'Type', 'Loại', 'NodeType')
         n_tier_col = get_col(nodes_df, 'Tier', 'Tầng', 'Level')
-        n_cap_col  = get_col(nodes_df, 'Design_Cap', 'DesignCap', 'Capacity', 'Công suất', 'Cap')
+        # Note: 'Degisn_Cap' is a known typo in some Excel files (should be 'Design_Cap')
+        n_cap_col  = get_col(nodes_df, 'Design_Cap', 'Degisn_Cap', 'DesignCap', 'Capacity', 'Công suất', 'Cap')
+        # Fuzzy fallback: if still not found, pick any column containing 'cap' (case-insensitive)
+        if n_cap_col is None:
+            n_cap_col = next(
+                (c for c in nodes_df.columns if 'cap' in str(c).lower()),
+                None
+            )
         n_lat_col  = get_col(nodes_df, 'Latitude', 'Lat')
         n_lon_col  = get_col(nodes_df, 'Longitude', 'Long', 'Lon')
 
@@ -145,6 +152,9 @@ def load_logistics_data(file_source):
 
             cap_raw = pd.to_numeric(row.get(n_cap_col), errors='coerce') if n_cap_col else None
             design_cap = float(cap_raw) if pd.notna(cap_raw) else None
+            # Scale design_cap if column name indicates '1000' unit (e.g. 'Degisn_Cap\n (1000 TEU/năm)')
+            if design_cap is not None and n_cap_col and '1000' in str(n_cap_col):
+                design_cap *= 1000.0
 
             lat_raw = pd.to_numeric(row.get(n_lat_col), errors='coerce') if n_lat_col else None
             lon_raw = pd.to_numeric(row.get(n_lon_col), errors='coerce') if n_lon_col else None
@@ -188,7 +198,24 @@ def load_logistics_data(file_source):
     if not data['Params'].empty:
         p_key_col  = get_col(data['Params'], 'Key', 'Param', 'Parameter', 'Tham số', 'Name')
         p_val_col  = get_col(data['Params'], 'Value', 'Val', 'Giá trị')
-        p_unit_col = get_col(data['Params'], 'Unit', 'Đơn vị', 'Units')  # cột đơn vị (nếu có)
+
+        # Tìm cột đơn vị: KHÔNG dùng get_col() vì nó fallback về columns[0] khi không tìm thấy.
+        # Tìm cột có tên chứa 'unit'/'đơn vị' HOẶC cột 'Unnamed:' có chứa '1000 TEU' trong dữ liệu.
+        p_unit_col = None
+        params_df = data['Params']
+        for col in params_df.columns:
+            col_lower = str(col).lower().strip()
+            if any(alias in col_lower for alias in ('unit', 'đơn vị', 'donvi')):
+                p_unit_col = col
+                break
+        if p_unit_col is None:
+            # Fallback: cột Unnamed chứa nội dung '1000 TEU' (Excel export ghi chú)
+            for col in params_df.columns:
+                if str(col).startswith('Unnamed'):
+                    col_vals = params_df[col].dropna().astype(str)
+                    if col_vals.str.contains('1000', na=False).any() and col_vals.str.upper().str.contains('TEU', na=False).any():
+                        p_unit_col = col
+                        break
 
         params_dict = {}
         for _, row in data['Params'].iterrows():

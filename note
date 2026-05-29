@@ -1,0 +1,19 @@
+Lý do mô hình chỉ chọn ~36% đường bộ (Road) mặc dù Fixed Cost (Phí mở tuyến) của đường bộ bằng 0 là vì: Biến phí (Variable Cost = UnitCost × Khoảng cách) của đường bộ đang đắt hơn rất nhiều so với sà lan (Barge) và đường sắt (Rail).
+
+Hàm mục tiêu của mô hình là tối ưu hóa Tổng chi phí = FixedCost + (VarCost × Flow). Khi lượng hàng (Flow) lớn (hàng trăm ngàn TEU), phần Biến phí chênh lệch khổng lồ sẽ dễ dàng "nhấn chìm" lợi thế Fixed Cost = 0 của đường bộ.
+
+Dưới đây là bằng chứng từ data của bạn trên một số tuyến trọng điểm:
+
+Tuyến CẢNG LẠCH HUYỆN -> ICD2-BN (Chở 235.000 TEU)
+
+Đường bộ: VarCost = 115, FC = 0 👉 Tổng tiền = 235.000 × 115 = 27.025.000
+Sà lan: VarCost = 52, FC = 0 👉 Tổng tiền = 235.000 × 52 = 12.220.000 (Barge rẻ hơn gấp đôi, model chắc chắn chọn Barge)
+Tuyến CẢNG LẠCH HUYỆN -> ICD2-HN (Chở 285.000 TEU)
+
+Đường bộ: VarCost = 130, FC = 0 👉 Tổng tiền = 285.000 × 130 = 37.050.000
+Đường sắt: VarCost = 33.75, FC = 5.000.000 👉 Tổng tiền = (285.000 × 33.75) + 5.000.000 = 14.618.750 (Tuy phải bỏ ra 5 triệu Fixed Cost để mở đường sắt, nhưng nhờ UnitCost quá rẻ nên tổng chi phí vẫn tiết kiệm được hơn 22 triệu. Model vui vẻ trả 5 triệu tiền mở tuyến để dùng đường sắt).
+Tuyến KCN2-BN -> CẢNG LẠCH HUYỆN (Chở 500.000 TEU)
+
+Đường bộ: VarCost = 112, FC = 6.000.000
+Sà lan: VarCost = 39.2, FC = 20.000.000 (Tiền mở Barge đắt hơn 14 triệu, nhưng tiền cước lại rẻ bằng 1/3. Với Flow tận 500.000, Barge ăn đứt đường bộ).
+Tóm lại: Dù bạn cấu hình k_road = 1 (nghĩa là cho phép đường bộ chở tới 100% tổng lượng hàng - không bị giới hạn k_road), mô hình vẫn tự động chọn dùng các phương thức khác (Sà lan ~53%, Đường sắt ~9%) vì thuật toán chứng minh được chúng tiết kiệm chi phí hơn hẳn đường bộ dựa trên bảng Đơn giá (UnitCost) mà bạn đã nhập liệu.

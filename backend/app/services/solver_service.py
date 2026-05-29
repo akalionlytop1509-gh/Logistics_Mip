@@ -49,13 +49,16 @@ def run_optimization(
     hub_cap = data.get('HubCapacity', {}) if use_hub_capacity else {}
 
     # 3. Initialize Optimizer
-    # lambda_co2 và e_max được đọc từ sheet Params trong Excel (không nhập từ UI)
-    optimizer = HubLogisticsOptimizer(
-        data,
-        k_road=k_road,
-        hub_capacity=hub_cap,
-        use_co2=use_co2,
-    )
+    try:
+        # lambda_co2 và e_max được đọc từ sheet Params trong Excel (không nhập từ UI)
+        optimizer = HubLogisticsOptimizer(
+            data,
+            k_road=k_road,
+            hub_capacity=hub_cap,
+            use_co2=use_co2,
+        )
+    except Exception as e:
+        raise ValueError(f"Failed to initialize optimizer: {str(e)}")
 
     # 4. Validate Data before solving
     is_valid, validation_errors, validation_warnings = validate_logistics_data(data, optimizer)
@@ -95,7 +98,13 @@ def run_optimization(
             "network_data": {}
         }
 
-    metrics = analyze_results(results_df, obj_val)
+    metrics = analyze_results(
+        results_df,
+        obj_val,
+        port_nodes=optimizer.port_nodes,
+        demand_map=optimizer.demand_map,
+        export_demand_total=optimizer.export_demand_total,
+    )
 
     # 6. Tính CO2 tổng trả về frontend
     co2_total = None

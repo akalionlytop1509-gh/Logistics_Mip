@@ -9,8 +9,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Get frontend URL from environment variable, default to localhost for development
-frontend_url = os.getenv("FRONTEND_URL", "http://localhost:8501")
+# Get frontend URL from environment variable, default to localhost/127.0.0.1 for development
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:8501,http://127.0.0.1:8501")
 allowed_origins = [url.strip() for url in frontend_url.split(",") if url.strip()]
 allow_credentials = "*" not in allowed_origins
 

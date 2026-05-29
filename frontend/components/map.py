@@ -31,6 +31,7 @@ def build_network_figure(
     port_nodes: set = None,
     nodes_info: dict = None,
     title: str = "Network (solid = used arcs; dashed = closed candidates)",
+    show_candidate_arcs: bool = False,
 ) -> go.Figure:
     """
     Build a Plotly network figure using Tier-based Hierarchical Layout.
@@ -66,7 +67,7 @@ def build_network_figure(
             cand_x += [x0, x1, None]
             cand_y += [y0, y1, None]
 
-    if cand_x:
+    if show_candidate_arcs and cand_x:
         traces.append(go.Scatter(
             x=cand_x, y=cand_y,
             mode='lines',
