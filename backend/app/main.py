@@ -1,7 +1,16 @@
+import os
+import sys
+
+# Thêm thư mục backend vào sys.path để Render có thể hiểu được module 'app'
+# khi chạy lệnh uvicorn backend.app.main:app từ thư mục gốc
+current_dir = os.path.dirname(os.path.abspath(__file__))
+backend_dir = os.path.dirname(current_dir)
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router as api_router
-import os
 
 app = FastAPI(
     title="Pro Hub API",
