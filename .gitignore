@@ -185,3 +185,14 @@ cython_debug/
 .cursorindexingignore
 # Streamlit Secrets
 **/.streamlit/secrets.toml
+
+__pycache__/
+*.pyc
+.env
+frontend/__pycache__/
+
+#drafts
+drafts/*
+
+#data
+data/*

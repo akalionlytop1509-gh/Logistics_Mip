@@ -67,88 +67,36 @@ div[data-testid="stMetric"] {
 }
 
 #MainMenu {visibility: hidden;}
-header {visibility: hidden;}
 footer {visibility: hidden;}
 .stDeployButton {display:none;}
+[data-testid="stHeader"] {
+    background-color: transparent !important;
+}
+[data-testid="stDecoration"] {
+    display: none !important;
+}
 
-/* ── Ghim Sidebar: ẩn nút collapse (mũi tên thu gọn) ── */
-[data-testid="collapsedControl"] {
-    display: none !important;
+/* Chỉnh màu nút thu gọn/mở rộng Sidebar thành màu Đen */
+[data-testid="stSidebarCollapseButton"] svg {
+    color: black !important;
 }
-button[kind="header"][data-testid="baseButton-header"],
-[data-testid="stSidebarCollapseButton"] {
-    display: none !important;
+[data-testid="collapsedControl"] svg {
+    color: black !important;
 }
-/* Đảm bảo sidebar luôn hiển thị với độ rộng cố định */
-[data-testid="stSidebar"] {
-    min-width: 280px !important;
-    max-width: 380px !important;
-}
-/* Ẩn nút collapse bên trong sidebar (mũi tên <) */
-[data-testid="stSidebarCollapseButton"] {
-    display: none !important;
-}
-/* Ẩn nút re-open khi sidebar đã đóng (mũi tên >) */
-[data-testid="collapsedControl"] {
-    display: none !important;
-}
+/* Loại bỏ giới hạn độ rộng cố định để Sidebar có thể kéo thả kích thước và thu gọn bình thường */
 </style>
 """
 
 # ── Page configuration
 st.set_page_config(
-    page_title="Pro Hub — Logistics Optimizer",
+    page_title="Hub Optimizer — Logistics Optimizer",
     page_icon="🚚",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 st.markdown(_get_css(), unsafe_allow_html=True)
 
-# ── Force sidebar luôn mở bằng JavaScript ──────────────────────────────────
-import streamlit.components.v1 as components
-components.html("""
-<script>
-(function() {
-    function forceOpenSidebar() {
-        // Tìm nút "collapsed control" (mũi tên > để mở lại sidebar)
-        var collapsedBtn = window.parent.document.querySelector('[data-testid="collapsedControl"] button');
-        if (!collapsedBtn) {
-            collapsedBtn = window.parent.document.querySelector('[data-testid="collapsedControl"]');
-        }
-        if (collapsedBtn) {
-            collapsedBtn.click();
-        }
-
-        // Ẩn nút collapse bên trong sidebar
-        var collapseBtn = window.parent.document.querySelector('[data-testid="stSidebarCollapseButton"]');
-        if (collapseBtn) {
-            collapseBtn.style.setProperty('display', 'none', 'important');
-        }
-
-        // Ẩn luôn vùng collapsedControl
-        var collapsedArea = window.parent.document.querySelector('[data-testid="collapsedControl"]');
-        if (collapsedArea) {
-            collapsedArea.style.setProperty('display', 'none', 'important');
-        }
-    }
-
-    // Chạy ngay khi load
-    forceOpenSidebar();
-
-    // Theo dõi DOM changes để xử lý khi Streamlit re-render
-    var observer = new MutationObserver(function(mutations) {
-        forceOpenSidebar();
-    });
-    observer.observe(window.parent.document.body, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['aria-expanded']
-    });
-})();
-</script>
-""", height=0)
-
+# ── (Đã bỏ mã JS ép Sidebar luôn mở để cho phép bật/tắt) ──────────────────
 # ─────────────────────────────────────────────────────────────────────────────
 # CURRENCY AUTO-DETECTION
 # ─────────────────────────────────────────────────────────────────────────────
@@ -215,7 +163,7 @@ if early_file_bytes and early_file_id != st.session_state.get("last_file_id"):
 # SIDEBAR
 # ─────────────────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### 🚚 **Pro Hub**")
+    st.markdown("### 🚚 **Hub Optimizier**")
     st.caption("Enterprise Logistics Optimizer")
     st.divider()
 
@@ -265,8 +213,7 @@ with st.sidebar:
         )
     )
     if use_co2:
-        st.caption("λ và E\_max lấy từ sheet **Params** trong Excel.")
-        st.caption("📌 EF của từng mode lấy từ sheet **Params** (ví dụ: Key `EF_road`, `EF_rail`, đơn vị kg/TEU.km).")
+        st.caption("📌 EF của từng mode lấy từ sheet **Params**")
 
     st.divider()
 
@@ -322,7 +269,7 @@ with st.spinner("Running Optimization Pipeline via Backend..."):
             k_road=k_road,
             use_co2=use_co2,
             solve_mode=solve_mode,
-            use_hub_capacity=use_hub_capacity
+            use_hub_capacity=use_hub_capacity,
         )
     except Exception as e:
         st.error(f"❌ Backend API Error: {e}")

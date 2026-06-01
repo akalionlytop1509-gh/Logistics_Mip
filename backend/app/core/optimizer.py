@@ -474,9 +474,13 @@ class HubLogisticsOptimizer:
 
     def _set_lp_objective(self, objective, dom, exp, fixed_y):
         fixed_cost_sum = 0.0
+        lambda_co2 = float(self.params.get('lambdaCO2', 0) or 0) if self.use_co2 else 0.0
         for u, v, m, _, uc, dist, fc, _ in self.arc_tuples:
             key = (u, v, m)
+            ef = float(self.emission_factors.get(str(m).lower(), 0))
             coeff = (uc * dist) + (self.loop_penalty * dist)
+            if self.use_co2 and ef > 0 and lambda_co2 > 0:
+                coeff += ef * dist * lambda_co2
             objective.SetCoefficient(dom[key], coeff)
             objective.SetCoefficient(exp[key], coeff)
             if fixed_y is not None and fixed_y.get(key, 0) == 1:
