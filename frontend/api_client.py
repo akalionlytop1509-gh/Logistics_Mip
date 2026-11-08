@@ -4,15 +4,19 @@ from pathlib import Path
 import requests
 import streamlit as st
 
-# Thêm thư mục backend vào sys.path để có thể import trực tiếp khi chạy All-in-One trên Cloud
+# Thêm thư mục backend và project root vào sys.path
 _CURRENT_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _CURRENT_DIR.parent
 _BACKEND_DIR = _PROJECT_ROOT / "backend"
 
-if str(_BACKEND_DIR) not in sys.path:
-    sys.path.insert(0, str(_BACKEND_DIR))
+# Đảm bảo _BACKEND_DIR luôn đứng ở vị trí ưu tiên cao nhất trong sys.path
+# và không bị xung đột giữa package 'backend/app' và file 'frontend/app.py'
+if str(_BACKEND_DIR) in sys.path:
+    sys.path.remove(str(_BACKEND_DIR))
+sys.path.insert(0, str(_BACKEND_DIR))
+
 if str(_PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(_PROJECT_ROOT))
+    sys.path.insert(1, str(_PROJECT_ROOT))
 
 # Support both env vars (local) and Streamlit Secrets (cloud)
 def _get_config(key, default=None):
@@ -34,6 +38,14 @@ def _run_optimization_direct(file_bytes, k_road, solve_mode, use_hub_capacity, u
     Runs the optimizer directly in-process without any HTTP request.
     Ideal for single-platform deployments (Streamlit Cloud).
     """
+    # Xóa cache nếu 'app' vô tình trỏ tới frontend/app.py thay vì package backend/app
+    if "app" in sys.modules and not hasattr(sys.modules["app"], "__path__"):
+        del sys.modules["app"]
+
+    if str(_BACKEND_DIR) in sys.path:
+        sys.path.remove(str(_BACKEND_DIR))
+    sys.path.insert(0, str(_BACKEND_DIR))
+
     from app.services.solver_service import run_optimization
     return run_optimization(
         file_bytes=file_bytes,
