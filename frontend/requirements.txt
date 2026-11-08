@@ -1,7 +1,8 @@
-# ── Frontend Dependencies
+# ── Frontend & Solver Dependencies (Streamlit Community Cloud)
 streamlit>=1.30.0
-folium>=0.15.0
+streamlit-extras>=0.4.0
 streamlit-folium>=0.17.0
+folium>=0.15.0
 plotly>=5.18.0
 pandas>=2.2.0
 openpyxl>=3.1.2
@@ -9,3 +10,6 @@ python-docx>=1.1.0
 matplotlib>=3.8.0
 networkx>=3.2
 requests>=2.31.0
+ortools>=9.10.0
+numpy>=1.26.0
+scipy>=1.12.0
