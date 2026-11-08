@@ -100,7 +100,7 @@ def create_scenario_co2_chart(feasible_df, currency="VND"):
         y="co2_total",
         text="display_text",
         markers=True,
-        labels={"objective_value": f"Objective Cost ({currency})", "co2_total": "CO₂ (tấn)"},
+        labels={"objective_value": f"Objective Cost ({currency})", "co2_total": "CO₂ (tons)"},
     )
     fig.update_traces(
         textposition="top center",
@@ -189,7 +189,7 @@ def create_scenario_social_cost_chart(feasible_df, currency="VND"):
     fig.add_trace(go.Bar(
         x=df["scenario"],
         y=df["objective_value"],
-        name="Chi phí vận hành",
+        name="Operating Cost",
         marker_color="#3b82f6",
         opacity=0.75
     ))
@@ -198,7 +198,7 @@ def create_scenario_social_cost_chart(feasible_df, currency="VND"):
     fig.add_trace(go.Bar(
         x=df["scenario"],
         y=df["co2_total"] * p_opt,
-        name="Chi phí CO₂ quy đổi",
+        name="Equivalent CO₂ Cost",
         marker_color="#10b981",
         opacity=0.75
     ))
@@ -207,7 +207,7 @@ def create_scenario_social_cost_chart(feasible_df, currency="VND"):
     fig.add_trace(go.Scatter(
         x=df["scenario"],
         y=df["social_cost"],
-        name="Tổng chi phí Xã hội (U-Shape)",
+        name="Total Social Cost (U-Shape)",
         line=dict(color="#f59e0b", width=4, dash="solid"),
         marker=dict(size=10, color="#f59e0b"),
         mode="lines+markers+text",
@@ -217,7 +217,7 @@ def create_scenario_social_cost_chart(feasible_df, currency="VND"):
     
     fig.update_layout(
         title={
-            'text': f"Điểm tối ưu Hài hòa (Eco-Sweet Spot) với Định giá CO₂ = {p_opt:,.1f} {currency}/tấn",
+            'text': f"Optimal Eco-Sweet Spot at CO₂ Price = {p_opt:,.1f} {currency}/ton",
             'y':0.95,
             'x':0.5,
             'xanchor': 'center',
@@ -227,7 +227,7 @@ def create_scenario_social_cost_chart(feasible_df, currency="VND"):
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(showgrid=True, gridcolor='#e2e8f0'),
-        yaxis=dict(title=f"Tổng Chi phí ({currency})", showgrid=True, gridcolor='#e2e8f0'),
+        yaxis=dict(title=f"Total Cost ({currency})", showgrid=True, gridcolor='#e2e8f0'),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         margin=dict(t=80, b=40, l=40, r=40)
     )

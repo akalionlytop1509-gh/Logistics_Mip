@@ -1,42 +1,42 @@
 # Pro Hub Logistics Optimizer
 
-Enterprise Logistics Optimizer system with FastAPI backend and Streamlit frontend.
+Enterprise Logistics Optimizer system with Google OR-Tools and Streamlit.
 
-## Deployment Architecture
+## 🌟 Kiến trúc Triển khai (Deployment)
 
-- **Backend**: FastAPI Web Service (Ready for Render)
-- **Frontend**: Streamlit Community Cloud
+Dự án hiện hỗ trợ **2 chế độ chạy**:
+1. **Chế độ 1 nền tảng duy nhất (Khuyên dùng cho Production/Chia sẻ)**: Chạy toàn bộ ứng dụng (UI + Thuật toán tối ưu OR-Tools) trực tiếp trên **Streamlit Community Cloud** (miễn phí, không lo server backend bị ngủ đông hay lỗi kết nối mạng).
+2. **Chế độ tách rời**: Backend FastAPI (Render/Docker) + Frontend Streamlit.
 
-### Local Development
+---
 
-1. Install dependencies:
-   ```bash
-   pip install -r backend/requirements.txt
-   pip install -r frontend/requirements.txt
-   ```
-2. Run the application:
-   ```bash
-   python run.py
-   ```
-   This will start both the backend API (port 8000) and frontend dashboard (port 8501).
+## 🚀 Hướng dẫn Triển khai lên Streamlit Community Cloud (Chỉ 1 nền tảng duy nhất)
 
-### Production Deployment
+1. Đẩy mã nguồn mới nhất lên GitHub repository của bạn: `https://github.com/akalionlytop1509-gh/Logistics_Mip`.
+2. Truy cập [share.streamlit.io](https://share.streamlit.io/) và đăng nhập bằng tài khoản GitHub.
+3. Nhấp vào **"Create app"** (hoặc "New app") và chọn:
+   - **Repository**: `akalionlytop1509-gh/Logistics_Mip`
+   - **Branch**: `main`
+   - **Main file path**: `frontend/app.py`
+4. Nhấp **Deploy!**
 
-#### Backend (Render)
-Connect this repository to Render as a Web Service.
-- Root directory: `backend`
-- Build command: `pip install -r requirements.txt`
-- Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-- Environment Variables:
-  - `FRONTEND_URL`: Your Streamlit app URL
-  - `MAX_UPLOAD_MB`: 20
-  - `PYTHONUNBUFFERED`: 1
+> 💡 **Lưu ý:** 
+> Bạn **không cần** cài đặt bất kỳ Secrets nào (không cần Render, không cần `API_BASE_URL`). 
+> Hệ thống sẽ tự động nhận diện và kích hoạt bộ giải toán OR-Tools trực tiếp trong Streamlit với hiệu năng cao nhất, không có độ trễ mạng và không bao giờ bị timeout.
 
-#### Frontend (Streamlit Community Cloud)
-Connect this repository to Streamlit Community Cloud.
-- Main file path: `frontend/app.py`
-- Setup Secrets (App Settings > Secrets):
-  ```toml
-  API_BASE_URL = "https://<your-render-backend-url>/api/v1"
-  API_TIMEOUT_SECONDS = "300"
-  ```
+---
+
+## 💻 Chạy cục bộ (Local Development)
+
+### Cách 1: Chạy All-in-One gọn nhẹ qua Streamlit
+```bash
+pip install -r requirements.txt
+streamlit run frontend/app.py
+```
+
+### Cách 2: Chạy tách rời cả Backend FastAPI và Streamlit
+```bash
+python run.py
+```
+- Backend API: `http://127.0.0.1:8000`
+- Frontend Dashboard: `http://localhost:8501`

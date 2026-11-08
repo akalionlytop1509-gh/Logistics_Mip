@@ -35,6 +35,10 @@ def main():
     
     # Add backend directory to PYTHONPATH so module 'app' can be found
     os.environ["PYTHONPATH"] = os.path.join(project_root, "backend") + os.pathsep + os.environ.get("PYTHONPATH", "")
+    
+    # Ensure local requests bypass any active system proxies
+    os.environ["NO_PROXY"] = "localhost,127.0.0.1" + ("," + os.environ["NO_PROXY"] if "NO_PROXY" in os.environ else "")
+    os.environ["no_proxy"] = os.environ["NO_PROXY"]
 
     # 1. Start Backend (FastAPI)
     backend_cmd = [

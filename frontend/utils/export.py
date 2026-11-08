@@ -7,7 +7,7 @@ from openpyxl.chart import BarChart, Reference
 
 def autofit_columns(ws, max_len_limit=50):
     """
-    Tự động căn chỉnh độ rộng cột của worksheet dựa trên chiều dài nội dung.
+    Auto-adjust worksheet column widths based on content length.
     """
     for col in ws.columns:
         max_len = 0
@@ -16,7 +16,7 @@ def autofit_columns(ws, max_len_limit=50):
             val_str = str(cell.value or '')
             if val_str.startswith('='):
                 continue
-            # Bỏ qua các hàng tiêu đề chính ở đầu trang
+            # Skip the main header rows at the top
             if cell.row < 5:
                 continue
             if len(val_str) > max_len:
@@ -25,15 +25,15 @@ def autofit_columns(ws, max_len_limit=50):
 
 def generate_scenario_excel(summary_df, scenario_flows_dict, currency="VND"):
     """
-    Tạo tệp Excel đa trang (.xlsx) cao cấp gồm:
-    1. Sheet 1: Tổng quan Kịch bản kèm Dashboard biểu đồ so sánh Chi phí & CO2.
-    2. Sheet 2: So sánh Tuyến đường (Route Flows) giữa các kịch bản.
-    3. Sheet 3: Phân bổ Phương thức (Modal Split) kèm biểu đồ Stacked Column.
+    Create a multi-page premium Excel file (.xlsx) including:
+    1. Sheet 1: Scenario Overview with Cost & CO2 comparison Dashboard.
+    2. Sheet 2: Route Flows comparison across scenarios.
+    3. Sheet 3: Modal Split with Stacked Column chart.
     """
     output = io.BytesIO()
     wb = openpyxl.Workbook()
     
-    # Định nghĩa phong cách chung (Design System)
+    # Define the general style (Design System)
     font_family = "Segoe UI"
     title_font = Font(name=font_family, size=16, bold=True, color="1B365D")
     subtitle_font = Font(name=font_family, size=10, italic=True, color="595959")
@@ -54,23 +54,23 @@ def generate_scenario_excel(summary_df, scenario_flows_dict, currency="VND"):
     )
     
     # ─────────────────────────────────────────────────────────────────────────
-    # SHEET 1: TỔNG QUAN KỊCH BẢN
+    # SHEET 1: SCENARIO OVERVIEW
     # ─────────────────────────────────────────────────────────────────────────
     ws1 = wb.active
-    ws1.title = "Tổng quan Kịch bản"
+    ws1.title = "Scenario Overview"
     ws1.views.sheetView[0].showGridLines = True
     
-    # Tiêu đề trang
-    ws1["A2"] = "BÁO CÁO SO SÁNH KỊCH BẢN LOGISTICS"
+    # Page title
+    ws1["A2"] = "LOGISTICS SCENARIO COMPARISON REPORT"
     ws1["A2"].font = title_font
-    ws1["A3"] = "Hệ thống Tối ưu hóa Mạng lưới Vận tải Multimodal — Enterprise Dashboard"
+    ws1["A3"] = "Multimodal Transport Network Optimization System — Enterprise Dashboard"
     ws1["A3"].font = subtitle_font
     
-    # Tạo Header bảng tổng quan
+    # Create overview table header
     headers1 = [
-        "Kịch bản", "Trạng thái", "K-road Kịch bản", f"Chi phí Mục tiêu ({currency})", "Phát thải CO₂ (tấn)", 
-        "Tỷ lệ Đường bộ (Thực tế)", "Tổng Lưu lượng (TEU)", "Tuyến Hoạt động", 
-        "Nội địa (TEU)", "Xuất khẩu (TEU)"
+        "Scenario", "Status", "K-road Scenario", f"Objective Cost ({currency})", "CO₂ Emissions (tons)", 
+        "Road Share (Actual)", "Total Flow (TEU)", "Active Routes", 
+        "Domestic (TEU)", "Export (TEU)"
     ]
     
     start_row = 5
@@ -83,7 +83,7 @@ def generate_scenario_excel(summary_df, scenario_flows_dict, currency="VND"):
     
     ws1.row_dimensions[start_row].height = 28
     
-    # Điền dữ liệu kịch bản
+    # Fill in scenario data
     for row_idx, (_, row) in enumerate(summary_df.iterrows(), start=start_row + 1):
         ws1.row_dimensions[row_idx].height = 22
         is_stripe = (row_idx % 2 == 0)
@@ -132,14 +132,14 @@ def generate_scenario_excel(summary_df, scenario_flows_dict, currency="VND"):
             cell.border = thin_border
             cell.number_format = num_format
  
-    # TÍCH HỢP CHARTS (DASHBOARD)
-    # Chart 1: So sánh Chi phí Mục tiêu (Bar Chart)
+    # INTEGRATE CHARTS (DASHBOARD)
+    # Chart 1: Objective Cost Comparison (Bar Chart)
     chart1 = BarChart()
     chart1.type = "col"
     chart1.style = 10
-    chart1.title = f"So sánh Chi phí Mục tiêu ({currency})"
+    chart1.title = f"Objective Cost Comparison ({currency})"
     chart1.y_axis.title = currency
-    chart1.x_axis.title = "Kịch bản"
+    chart1.x_axis.title = "Scenario"
     chart1.width = 14
     chart1.height = 8.5
     
@@ -147,31 +147,31 @@ def generate_scenario_excel(summary_df, scenario_flows_dict, currency="VND"):
     cats1 = Reference(ws1, min_col=1, min_row=start_row + 1, max_row=start_row + len(summary_df))
     chart1.add_data(data1, titles_from_data=True)
     chart1.set_categories(cats1)
-    chart1.legend = None # Không cần legend do chỉ có 1 cột
+    chart1.legend = None # No legend needed as there is only 1 column
     ws1.add_chart(chart1, "B14")
     
-    # Chart 2: Phát thải CO2 (Bar Chart)
+    # Chart 2: CO2 Emissions (Bar Chart)
     chart2 = BarChart()
     chart2.type = "col"
     chart2.style = 13
-    chart2.title = "So sánh Phát thải CO₂ (Tấn)"
-    chart2.y_axis.title = "Tấn CO₂"
-    chart2.x_axis.title = "Kịch bản"
+    chart2.title = "CO₂ Emissions Comparison (Tons)"
+    chart2.y_axis.title = "Tons CO₂"
+    chart2.x_axis.title = "Scenario"
     chart2.width = 14
     chart2.height = 8.5
 
     # ─────────────────────────────────────────────────────────────────────────
-    # SHEET 2: SO SÁNH TUYẾN ĐƯỜNG (ROUTE FLOW COMPARISON)
+    # SHEET 2: ROUTE FLOW COMPARISON
     # ─────────────────────────────────────────────────────────────────────────
-    ws2 = wb.create_sheet(title="So sánh Tuyến đường")
+    ws2 = wb.create_sheet(title="Route Comparison")
     ws2.views.sheetView[0].showGridLines = True
     
-    ws2["A2"] = "BẢNG SO SÁNH CHI TIẾT DÒNG CHẢY LOGISTICS"
+    ws2["A2"] = "DETAILED LOGISTICS FLOW COMPARISON TABLE"
     ws2["A2"].font = title_font
-    ws2["A3"] = "Phân tích lưu lượng vận chuyển (TEU) theo từng tuyến đường và phương thức giữa các kịch bản"
+    ws2["A3"] = "Transport flow analysis (TEU) by route and mode across scenarios"
     ws2["A3"].font = subtitle_font
     
-    # Thu thập và tổng hợp toàn bộ các tuyến đường phát sinh lưu lượng
+    # Collect and aggregate all routes with flow
     all_routes = []
     for sc_name, flows in scenario_flows_dict.items():
         for f in flows:
@@ -185,13 +185,13 @@ def generate_scenario_excel(summary_df, scenario_flows_dict, currency="VND"):
                 })
                 
     if not all_routes:
-        ws2["A5"] = "Không phát hiện dòng chảy nào đang hoạt động trong các kịch bản được chọn."
+        ws2["A5"] = "No active flow detected in the selected scenarios."
         ws2["A5"].font = bold_data_font
     else:
-        # Tạo bảng phẳng duy nhất các tuyến đường
+        # Create a single flat table of routes
         df_routes = pd.DataFrame(all_routes).drop_duplicates()
         
-        # Merge lưu lượng của từng kịch bản
+        # Merge flows of each scenario
         for sc_name, flows in scenario_flows_dict.items():
             df_temp = pd.DataFrame(flows)
             if not df_temp.empty:
@@ -201,13 +201,13 @@ def generate_scenario_excel(summary_df, scenario_flows_dict, currency="VND"):
             else:
                 df_routes[sc_name] = 0.0
                 
-        # Điền 0 cho các kịch bản không đi qua tuyến đó
+        # Fill 0 for scenarios not passing through that route
         sc_names = list(scenario_flows_dict.keys())
         df_routes[sc_names] = df_routes[sc_names].fillna(0.0)
         df_routes.sort_values(by=["From", "To", "Mode"], inplace=True)
         
-        # Headers của sheet 2
-        headers2 = ["Điểm đầu (From)", "Điểm cuối (To)", "Phương thức (Mode)", "Loại hình Flow"] + sc_names
+        # Headers for sheet 2
+        headers2 = ["From", "To", "Mode", "Flow Type"] + sc_names
         
         for col_idx, header in enumerate(headers2, start=1):
             cell = ws2.cell(row=5, column=col_idx, value=header)
@@ -218,7 +218,7 @@ def generate_scenario_excel(summary_df, scenario_flows_dict, currency="VND"):
             
         ws2.row_dimensions[5].height = 26
         
-        # Viết dữ liệu
+        # Write data
         for r_idx, (_, row) in enumerate(df_routes.iterrows(), start=6):
             ws2.row_dimensions[r_idx].height = 20
             is_stripe = (r_idx % 2 == 0)
@@ -230,7 +230,7 @@ def generate_scenario_excel(summary_df, scenario_flows_dict, currency="VND"):
             c_mode = ws2.cell(row=r_idx, column=3, value=row.get("Mode"))
             
             # Is Export
-            is_exp = "Xuất khẩu (Export)" if row.get("Is_Export") == 1 else "Nội địa (Domestic)"
+            is_exp = "Export" if row.get("Is_Export") == 1 else "Domestic"
             c_exp = ws2.cell(row=r_idx, column=4, value=is_exp)
             
             for col_c, cell_c in enumerate([c_from, c_to, c_mode, c_exp], start=1):
@@ -250,17 +250,17 @@ def generate_scenario_excel(summary_df, scenario_flows_dict, currency="VND"):
                 cell.number_format = '#,##0.0'
 
     # ─────────────────────────────────────────────────────────────────────────
-    # SHEET 3: PHÂN BỔ PHƯƠNG THỨC (MODAL SPLIT COMPARISON)
+    # SHEET 3: MODAL SPLIT COMPARISON
     # ─────────────────────────────────────────────────────────────────────────
-    ws3 = wb.create_sheet(title="Phân bổ Phương thức")
+    ws3 = wb.create_sheet(title="Modal Split")
     ws3.views.sheetView[0].showGridLines = True
     
-    ws3["A2"] = "CƠ CẤU VÀ PHÂN BỔ PHƯƠNG THỨC VẬN TẢI"
+    ws3["A2"] = "TRANSPORT MODE STRUCTURE AND ALLOCATION"
     ws3["A2"].font = title_font
-    ws3["A3"] = "So sánh tổng lưu lượng phân bổ (TEU) theo từng hình thức qua các kịch bản"
+    ws3["A3"] = "Compare total allocated flow (TEU) by mode across scenarios"
     ws3["A3"].font = subtitle_font
     
-    headers3 = ["Kịch bản", "Đường bộ (Road)", "Đường sắt (Rail)", "Đường thủy/Biển (Water)", "Tổng cộng"]
+    headers3 = ["Scenario", "Road", "Rail", "Water/Sea", "Total"]
     for col_idx, header in enumerate(headers3, start=1):
         cell = ws3.cell(row=5, column=col_idx, value=header)
         cell.font = header_font
@@ -302,25 +302,25 @@ def generate_scenario_excel(summary_df, scenario_flows_dict, currency="VND"):
             cell.alignment = Alignment(horizontal="right", vertical="center")
             cell.number_format = '#,##0'
             
-    # Chart 3: Stacked Column Chart cho Modal Split
+    # Chart 3: Stacked Column Chart for Modal Split
     chart3 = BarChart()
     chart3.type = "col"
     chart3.grouping = "stacked"
     chart3.overlap = 100
-    chart3.title = "Cơ cấu Lưu lượng theo Phương thức (TEU)"
+    chart3.title = "Flow Structure by Mode (TEU)"
     chart3.y_axis.title = "TEU"
-    chart3.x_axis.title = "Kịch bản"
+    chart3.x_axis.title = "Scenario"
     chart3.width = 15
     chart3.height = 9.5
     
-    # Trỏ đến dữ liệu của các phương thức Road, Rail, Water (không chọn tổng cộng)
+    # Point to data for Road, Rail, Water modes (exclude total)
     data3 = Reference(ws3, min_col=2, max_col=4, min_row=5, max_row=5 + len(summary_df))
     cats3 = Reference(ws3, min_col=1, min_row=6, max_row=5 + len(summary_df))
     chart3.add_data(data3, titles_from_data=True)
     chart3.set_categories(cats3)
     ws3.add_chart(chart3, "B14")
 
-    # Căn chỉnh kích thước cột tự động cho cả 3 trang
+    # Auto-adjust column sizes for all 3 sheets
     autofit_columns(ws1)
     autofit_columns(ws2)
     autofit_columns(ws3)

@@ -76,14 +76,14 @@ footer {visibility: hidden;}
     display: none !important;
 }
 
-/* Chỉnh màu nút thu gọn/mở rộng Sidebar thành màu Đen */
+/* Change the color of the collapse/expand Sidebar button to Black */
 [data-testid="stSidebarCollapseButton"] svg {
     color: black !important;
 }
 [data-testid="collapsedControl"] svg {
     color: black !important;
 }
-/* Loại bỏ giới hạn độ rộng cố định để Sidebar có thể kéo thả kích thước và thu gọn bình thường */
+/* Remove fixed width limit so Sidebar can be resized and collapsed normally */
 </style>
 """
 
@@ -96,7 +96,7 @@ st.set_page_config(
 )
 st.markdown(_get_css(), unsafe_allow_html=True)
 
-# ── (Đã bỏ mã JS ép Sidebar luôn mở để cho phép bật/tắt) ──────────────────
+# ── (Removed JS code forcing Sidebar to stay open to allow toggling) ─────────
 # ─────────────────────────────────────────────────────────────────────────────
 # CURRENCY AUTO-DETECTION
 # ─────────────────────────────────────────────────────────────────────────────
@@ -204,16 +204,16 @@ with st.sidebar:
     # ── CO2 / Green Logistics ────────────────────────────────────────────────
     st.markdown("#### 🌿 Green Logistics (CO₂)")
     use_co2 = st.toggle(
-        "Bật tính toán CO₂",
+        "Enable CO₂ calculation",
         value=False,
         help=(
-            "Khi bật: đưa phát thải CO₂ vào hàm mục tiêu (λ·Σ E_m·d·x) "
-            "và áp ràng buộc E_max nếu có.\n\n"
-            "λ và E_max được đọc từ sheet Params trong file Excel đầu vào."
+            "When enabled: adds CO₂ emissions to the objective function "
+            "and applies E_max constraint if available.\n\n"
+            "EF values are read from the Params sheet in the input Excel file."
         )
     )
     if use_co2:
-        st.caption("📌 EF của từng mode lấy từ sheet **Params**")
+        st.caption("📌 EF for each mode is taken from the **Params** sheet")
 
     st.divider()
 
@@ -230,12 +230,12 @@ with st.sidebar:
     # Hub Capacity Scenario
     st.markdown("#### 🏭 Hub Constraint")
     scenario = st.radio(
-        "Kịch bản",
-        options=["Không giới hạn Hub", "Giới hạn Hub Capacity"],
+        "Scenario",
+        options=["Unlimited Hub Capacity", "Limited Hub Capacity"],
         index=0,
-        help="Áp dụng ràng buộc công suất hub từ sheet 'Nodes' trong Excel."
+        help="Apply hub capacity constraints from 'Nodes' sheet in Excel."
     )
-    use_hub_capacity = scenario.startswith("Giới hạn")
+    use_hub_capacity = scenario.startswith("Limited")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN AREA
@@ -284,10 +284,10 @@ if current_infeasible:
     st.error(f"❌ **Infeasible**: {msg}")
 
 # Success banner
-scenario_label = "Kịch bản 2" if use_hub_capacity else "Kịch bản 1"
+scenario_label = "Scenario 2" if use_hub_capacity else "Scenario 1"
 obj_val = response.get("objective_value", 0)
 co2_total = response.get("co2_total", None)
-co2_label = f" | CO₂: {co2_total:,} tấn" if (use_co2 and co2_total is not None) else ""
+co2_label = f" | CO₂: {co2_total:,} tons" if (use_co2 and co2_total is not None) else ""
 
 # ── Define currency formatters
 if currency == "USD":
@@ -305,10 +305,10 @@ if not current_infeasible:
 # Cảnh báo khi bật CO2 nhưng file Excel thiếu cột EmissionFactor
 if use_co2 and (co2_total is None or co2_total == 0):
     st.warning(
-        "⚠️ **CO₂ bật nhưng tất cả giá trị bằng 0.** "
-        "Kiểm tra sheet **Params** trong Excel: cần có các Key `EF_road`, `EF_rail`, `EF_sea`... (kg CO₂/TEU.km) "
-        "cho mỗi Mode. "
-        "Sheet **Params** cũng cần có key `lambdaCO2`."
+        "⚠️ **CO₂ is enabled but all values are 0.** "
+        "Check the **Params** sheet in Excel: need Keys like `EF_road`, `EF_rail`, `EF_sea`... (kg CO₂/TEU.km) "
+        "for each Mode. "
+        "The **Params** sheet also needs the key `lambdaCO2`."
     )
 
 metrics = response.get("metrics", {})
@@ -347,11 +347,11 @@ with tab1:
     @st.fragment
     def render_network_tab_content():
         st.subheader("Optimized Logistics Network (Solid=Used, Dashed=Candidate)")
-        show_candidate_arcs = st.toggle("Hiển thị lưới tuyến ứng viên (Candidate Arcs)", value=False)
+        show_candidate_arcs = st.toggle("Show candidate arcs network", value=False)
 
         # 🌿 Summary CO2 (Always show if co2_total exists)
         if co2_total is not None:
-            st.info(f"🌿 **Tổng phát thải CO₂**: {co2_total:,} tấn")
+            st.info(f"🌿 **Total CO₂ emissions**: {co2_total:,} tons")
 
         fig = viz_map.build_network_figure(
             results_df,
@@ -397,7 +397,7 @@ with tab1:
                 "FixedCost": st.column_config.Column(f"Fixed Cost ({currency})"),
             }
             if "CO2_Emission" in active_flows.columns:
-                col_cfg_tab1["CO2_Emission"] = st.column_config.Column("CO₂ (tấn)")
+                col_cfg_tab1["CO2_Emission"] = st.column_config.Column("CO₂ (tons)")
                 
             st.dataframe(
                 styled_flows,
@@ -597,13 +597,13 @@ with tab5:
             column_config={
                 "scenario": st.column_config.TextColumn("Scenario"),
                 "status": st.column_config.TextColumn("Status"),
-                "k_road_limit": "K-road Kịch bản",
+                "k_road_limit": "K-road Scenario",
                 "objective_value": f"Objective Cost ({currency})",
-                "co2_total": "CO₂ (tấn)",
+                "co2_total": "CO₂ (tons)",
                 "total_flow": "Total Flow (TEU)",
                 "active_routes": "Active Routes",
                 "road_flow": "Road Flow",
-                "road_share_pct": "Tỷ lệ Đường bộ (Thực tế)",
+                "road_share_pct": "Actual Road Share",
                 "export_flow": "Export Flow",
                 "domestic_flow": "Domestic Flow",
                 "message": st.column_config.TextColumn("Message"),
@@ -628,11 +628,11 @@ with tab5:
 
             if has_co2:
                 st.write("")
-                st.markdown("### 🌿 Điểm Hài Hòa Tối Ưu (Eco-Efficiency Sweet Spot)")
+                st.markdown("### 🌿 Eco-Efficiency Sweet Spot")
                 st.caption(
-                    "Biểu đồ phân tích điểm hài hòa tối ưu giữa Chi phí Vận hành (Transport Cost) và Phát thải CO₂. "
-                    "Bằng cách áp dụng đơn giá khí thải CO₂ quy đổi (Carbon Price), chúng ta tìm ra kịch bản "
-                    "có Tổng chi phí Xã hội (Social Cost) thấp nhất làm điểm đáy của hình Parabol."
+                    "Chart analyzing the optimal sweet spot between Transport Cost and CO₂ Emissions. "
+                    "By applying the equivalent carbon price, we find the scenario "
+                    "with the lowest Total Social Cost as the bottom of the Parabola."
                 )
                 fig_social = viz_charts.create_scenario_social_cost_chart(feasible_df, currency=currency)
                 if fig_social:
@@ -661,8 +661,8 @@ with tab5:
 
             # Phân vùng xuất báo cáo Scenario Comparison
             st.divider()
-            st.markdown("### 📥 Xuất Báo Cáo So Sánh (Export Report)")
-            st.caption("Tải xuống báo cáo phân tích so sánh đa trang Excel (.xlsx) có biểu đồ trực quan hoặc tệp CSV (.csv) tiện lợi.")
+            st.markdown("### 📥 Export Comparison Report")
+            st.caption("Download multi-page Excel comparison report (.xlsx) with visual charts or convenient CSV file (.csv).")
             
             btn_col1, btn_col2 = st.columns(2)
             with btn_col1:
@@ -670,7 +670,7 @@ with tab5:
                     from utils.export import generate_scenario_excel
                     excel_bytes = generate_scenario_excel(display_df, scenario_flows_dict, currency=currency)
                     st.download_button(
-                        label="📊 Tải Báo cáo Excel đầy đủ (.xlsx)",
+                        label="📊 Download Full Excel Report (.xlsx)",
                         data=excel_bytes,
                         file_name="Logistics_Scenario_Comparison_Report.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -678,12 +678,12 @@ with tab5:
                         use_container_width=True
                     )
                 except Exception as ex:
-                    st.error(f"Lỗi tạo file Excel: {ex}")
+                    st.error(f"Error creating Excel file: {ex}")
             with btn_col2:
                 try:
                     csv_data = display_df.to_csv(index=False).encode("utf-8")
                     st.download_button(
-                        label="📄 Tải Bảng tổng quan CSV (.csv)",
+                        label="📄 Download CSV Overview (.csv)",
                         data=csv_data,
                         file_name="Logistics_Scenario_Comparison_Summary.csv",
                         mime="text/csv",
@@ -691,6 +691,6 @@ with tab5:
                         use_container_width=True
                     )
                 except Exception as ex:
-                    st.error(f"Lỗi tạo file CSV: {ex}")
+                    st.error(f"Error creating CSV file: {ex}")
     else:
         st.info("Click the button above to run the six standard scenarios.")
